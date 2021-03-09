@@ -162,7 +162,7 @@ INT corrupt_rel(INT id, INT h, INT t, INT r, bool p = false, bool filter_flag = 
 	return tmp + lef - ll + 1;
 }
 
-
+extern "C"
 bool _find(INT h, INT t, INT r) {
     INT lef = 0;
     INT rig = tripleTotal - 1;
