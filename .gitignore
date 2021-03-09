@@ -131,3 +131,6 @@ dmypy.json
 # 27/02
 data/*
 src/checkpoint/*
+
+# 10/03
+*.odt
