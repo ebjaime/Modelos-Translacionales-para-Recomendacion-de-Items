@@ -67,6 +67,8 @@ class Tester(object):
             'mode': data['mode']
         })
 
+    # !!! MODIFIED
+    # TODO
     def run_link_prediction(self, type_constrain = False):
         self.lib.initTest()
         self.data_loader.set_sampling_mode('link')
@@ -75,22 +77,51 @@ class Tester(object):
         else:
             type_constrain = 0
         training_range = tqdm(self.data_loader)
+        
+        
+        h_at_10 = 0
+        h_at_5 = 0
+        
         for index, [data_head, data_tail] in enumerate(training_range):
             # score = self.test_one_step(data_head)
             # self.lib.testHead(score.__array_interface__["data"][0], index, type_constrain)
             score = self.test_one_step(data_tail)
             # self.lib.testTail(score.__array_interface__["data"][0], index, type_constrain)
-            self.lib._find(data_tail['batch_h'][0], data_tail['batch_t'][0], data_tail['batch_r'][0]);
-       
-        self.lib.test_link_prediction(type_constrain)
+            
+            score_sorted = np.argsort(score) # Menor score es mejor recom.
+            top10 = score_sorted[:10]
+            top5 = score_sorted[:5]
+            
+            for s in top10:
+                h_at_10 += self.lib._find(int(data_head['batch_h'][0]),
+                                       int(s),
+                                       int(data_head['batch_r'][0]))
+            
+            
+            for s in top5:
+                h_at_5 += self.lib._find(int(data_head['batch_h'][0]),
+                                       int(s),
+                                       int(data_head['batch_r'][0]))
+            
+        p_at_5 = h_at_5 / (index*5)
+        p_at_10 = h_at_10 / (index*10)
+        
+        r_at_5 = h_at_5
+        r_at_10 = h_at_10
+        
+        
+        print("\n\nP@5: ",p_at_5)
+        print("P@10: ",p_at_10)            
+        
+        # self.lib.test_link_prediction(type_constrain)
 
-        mrr = self.lib.getTestLinkMRR(type_constrain)
-        mr = self.lib.getTestLinkMR(type_constrain)
-        hit10 = self.lib.getTestLinkHit10(type_constrain)
-        hit3 = self.lib.getTestLinkHit3(type_constrain)
-        hit1 = self.lib.getTestLinkHit1(type_constrain)
-        print (hit10)
-        return mrr, mr, hit10, hit3, hit1
+        # mrr = self.lib.getTestLinkMRR(type_constrain)
+        # mr = self.lib.getTestLinkMR(type_constrain)
+        # hit10 = self.lib.getTestLinkHit10(type_constrain)
+        # hit3 = self.lib.getTestLinkHit3(type_constrain)
+        # hit1 = self.lib.getTestLinkHit1(type_constrain)
+        # return mrr, mr, hit10, hit3, hit1
+        return p_at_5, p_at_10        
 
     def get_best_threshlod(self, score, ans):
         res = np.concatenate([ans.reshape(-1,1), score.reshape(-1,1)], axis = -1)
