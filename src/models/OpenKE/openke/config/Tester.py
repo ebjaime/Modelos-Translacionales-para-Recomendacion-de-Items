@@ -14,6 +14,8 @@ from sklearn.metrics import roc_auc_score
 import copy
 from tqdm import tqdm
 
+import pandas as pd
+
 class Tester(object):
 
     def __init__(self, model = None, data_loader = None, use_gpu = True):
@@ -66,9 +68,10 @@ class Tester(object):
             'batch_r': self.to_var(data['batch_r'], self.use_gpu),
             'mode': data['mode']
         })
-
-    # !!! MODIFIED
-    # TODO
+    
+    # =============================================================================
+    #  !!! MODIFIED @ebjaime - 10/03
+    # =============================================================================
     def run_link_prediction(self, type_constrain = False):
         self.lib.initTest()
         self.data_loader.set_sampling_mode('link')
@@ -78,6 +81,7 @@ class Tester(object):
             type_constrain = 0
         training_range = tqdm(self.data_loader)
         
+        rel_doc_by_head = self.relevant_documents_in_test_by_head()
         
         h_at_10 = 0
         h_at_5 = 0
@@ -89,6 +93,7 @@ class Tester(object):
             # self.lib.testTail(score.__array_interface__["data"][0], index, type_constrain)
             
             score_sorted = np.argsort(score) # Menor score es mejor recom.
+            print(len(score_sorted), "\n")
             top10 = score_sorted[:10]
             top5 = score_sorted[:5]
             
@@ -106,12 +111,16 @@ class Tester(object):
         p_at_5 = h_at_5 / (index*5)
         p_at_10 = h_at_10 / (index*10)
         
+        # TODO
         r_at_5 = h_at_5
         r_at_10 = h_at_10
         
         
         print("\n\nP@5: ",p_at_5)
         print("P@10: ",p_at_10)            
+
+        
+        return p_at_5, p_at_10, r_at_5, r_at_10
         
         # self.lib.test_link_prediction(type_constrain)
 
@@ -121,7 +130,7 @@ class Tester(object):
         # hit3 = self.lib.getTestLinkHit3(type_constrain)
         # hit1 = self.lib.getTestLinkHit1(type_constrain)
         # return mrr, mr, hit10, hit3, hit1
-        return p_at_5, p_at_10        
+               
 
     def get_best_threshlod(self, score, ans):
         res = np.concatenate([ans.reshape(-1,1), score.reshape(-1,1)], axis = -1)
@@ -182,3 +191,15 @@ class Tester(object):
                 total_current += 1.0
 
         return acc, threshlod
+    
+    # Read in test cases how many relevant documents there are for each head entity
+    def relevant_documents_in_test_by_head(self):
+        path = self.data_loader.get_path() + "test2id.txt"
+        data = pd.read_csv(path, 
+                           sep="\t", 
+                           header=None, 
+                           names=["user_id","item_id","rel_id"],
+                           skip_rows=[0])
+        
+        return data
+        
