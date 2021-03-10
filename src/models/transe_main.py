@@ -25,7 +25,7 @@ from OpenKE.openke.module.strategy import NegativeSampling
 from OpenKE.openke.data import TrainDataLoader, TestDataLoader
 
 # =============================================================================
-# PARAMETERS
+#  PARAMETERS
 # =============================================================================
 
 # Sampling parameters (Train)
@@ -122,7 +122,7 @@ if os.path.isfile('../checkpoint/transe_%s_d%d_e%d_lr%f.ckpt' % (dataset, d, epo
 # =============================================================================
 #  TESTING
 # =============================================================================
-# test the model
+# Test the model
 transe.load_checkpoint('../checkpoint/transe_%s_d%d_e%d_lr%f.ckpt' % (dataset, d, epochs, lr))
 tester = Tester(model = transe, data_loader = test_dataloader, use_gpu = True)
 tester.run_link_prediction(type_constrain = False)
