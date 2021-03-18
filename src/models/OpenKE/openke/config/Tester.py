@@ -80,11 +80,14 @@ class Tester(object):
         else:
             type_constrain = 0
         training_range = tqdm(self.data_loader)
+                
         
-        rel_doc_by_head = self.relevant_documents_in_test_by_head()
+        num_relevant_documents_in_test = self.lib.getTestTotal()
         
         h_at_10 = 0
         h_at_5 = 0
+        
+        mean_avg_prec = 0
         
         for index, [data_head, data_tail] in enumerate(training_range):
             # score = self.test_one_step(data_head)
@@ -92,44 +95,48 @@ class Tester(object):
             score = self.test_one_step(data_tail)
             # self.lib.testTail(score.__array_interface__["data"][0], index, type_constrain)
             
-            score_sorted = np.argsort(score) # Menor score es mejor recom.
-            print(len(score_sorted), "\n")
-            top10 = score_sorted[:10]
-            top5 = score_sorted[:5]
+            # Menor score es mejor recomendacion
+            score_sorted = np.argsort(score) 
+                        
+            count = 0 # Contador de items relevantes
             
-            for s in top10:
-                h_at_10 += self.lib._find(int(data_head['batch_h'][0]),
-                                       int(s),
-                                       int(data_head['batch_r'][0]))
+            map_aux = 0 # Calculo de MAP intermedio
             
+            for idx,score in enumerate(score_sorted):
+                # Si es relevante (no pertenece al conjunto de entrenamiento ni validación)
+                relevant = self.lib._find_test(int(data_head['batch_h'][0]), int(score), int(data_head['batch_r'][0]))
+                
+                if relevant:
+                
+                    if count < 5:
+                        h_at_5 += relevant
+                    if count < 10:
+                        h_at_10 += relevant
+
+                    count+=1           
+                    
+                    map_aux += count/(idx+1) 
+
+            if count!=0:
+                mean_avg_prec += map_aux / count
             
-            for s in top5:
-                h_at_5 += self.lib._find(int(data_head['batch_h'][0]),
-                                       int(s),
-                                       int(data_head['batch_r'][0]))
-            
-        p_at_5 = h_at_5 / (index*5)
-        p_at_10 = h_at_10 / (index*10)
         
-        # TODO
-        r_at_5 = h_at_5
-        r_at_10 = h_at_10
+        p_at_5 = h_at_5 / (index * 5) 
+        p_at_10 = h_at_10 / (index * 10)
         
+        r_at_5 = h_at_5 / num_relevant_documents_in_test
+        r_at_10 = h_at_10 /num_relevant_documents_in_test
+        
+        mean_avg_prec /= index
         
         print("\n\nP@5: ",p_at_5)
-        print("P@10: ",p_at_10)            
+        print("P@10: ",p_at_10)  
+        print("R@5: ",r_at_5)
+        print("R@10: ",r_at_10)            
+        print("MAP: ", mean_avg_prec)
 
-        
         return p_at_5, p_at_10, r_at_5, r_at_10
         
-        # self.lib.test_link_prediction(type_constrain)
-
-        # mrr = self.lib.getTestLinkMRR(type_constrain)
-        # mr = self.lib.getTestLinkMR(type_constrain)
-        # hit10 = self.lib.getTestLinkHit10(type_constrain)
-        # hit3 = self.lib.getTestLinkHit3(type_constrain)
-        # hit1 = self.lib.getTestLinkHit1(type_constrain)
-        # return mrr, mr, hit10, hit3, hit1
                
 
     def get_best_threshlod(self, score, ans):
@@ -192,14 +199,3 @@ class Tester(object):
 
         return acc, threshlod
     
-    # Read in test cases how many relevant documents there are for each head entity
-    def relevant_documents_in_test_by_head(self):
-        path = self.data_loader.get_path() + "test2id.txt"
-        data = pd.read_csv(path, 
-                           sep="\t", 
-                           header=None, 
-                           names=["user_id","item_id","rel_id"],
-                           skip_rows=[0])
-        
-        return data
-        
