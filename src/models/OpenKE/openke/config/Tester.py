@@ -70,7 +70,7 @@ class Tester(object):
         })
     
     # =============================================================================
-    #  !!! MODIFIED @ebjaime - 10/03
+    #  @ebjaime - 10/03
     # =============================================================================
     def run_link_prediction(self, type_constrain = False):
         self.lib.initTest()
@@ -80,7 +80,6 @@ class Tester(object):
         else:
             type_constrain = 0
         training_range = tqdm(self.data_loader)
-                
         
         num_relevant_documents_in_test = self.lib.getTestTotal()
         
@@ -88,6 +87,13 @@ class Tester(object):
         h_at_5 = 0
         
         mean_avg_prec = 0
+        
+        # Obtener cinco y diez productos mas populares para calcular SER@n
+        ten_most_popular = self.k_most_popular(10)
+        five_most_popular = ten_most_popular[:5]
+        
+        ser_at_5 = 0
+        ser_at_10 = 0
         
         for index, [data_head, data_tail] in enumerate(training_range):
             # score = self.test_one_step(data_head)
@@ -110,6 +116,9 @@ class Tester(object):
                 
                     if count < 5:
                         h_at_5 += relevant
+                        
+                        # TODO Detectar si sumar en ser_at_5 / 10
+                        
                     if count < 10:
                         h_at_10 += relevant
 
@@ -128,6 +137,9 @@ class Tester(object):
         r_at_10 = h_at_10 /num_relevant_documents_in_test
         
         mean_avg_prec /= index
+        
+        ser_at_5 /= (index * 5)
+        ser_at_10 /= (index * 10)
         
         print("\n\nP@5: ",p_at_5)
         print("P@10: ",p_at_10)  
@@ -198,4 +210,14 @@ class Tester(object):
                 total_current += 1.0
 
         return acc, threshlod
+    
+    def k_most_popular(self, k, dataset_str="train2id.txt"):
+        path = self.data_loader.get_path() + dataset_str
+        data = pd.read_csv(path, 
+                           sep="\t", 
+                           header=None, 
+                           names=["user_id","item_id","rel_id"],
+                           skiprows=1)
+        
+        return np.argsort(data.groupby(["user_id"]).size()).keys()[:k]
     
