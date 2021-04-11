@@ -170,7 +170,9 @@ subjects = dbo_subject["Subject"].unique()
 # all = pd.read_csv("../data/%s/train_test_entity2rec/all.dat" % dataset, header=None, sep=" ")
 
 users = feedback_relevant["UserID"].unique() #all[0].unique()
-authors = feedback_relevant["UserID"].unique() #all[1].unique()
+authors = {*feedback_relevant["Author"].unique(), *dbo_associated["Author1"].unique(), *dbo_bandMember["Author1"].unique(), 
+           *dbo_formerBandMember["Author1"].unique(), *dbo_genre["Author"].unique(), *dbo_hometown["Author"].unique(), *dbo_birthPlace["Author"].unique(),
+           *dbo_instrument["Author"].unique(), *dbo_occupation["Author"].unique(), *dbo_recordLabel["Author"].unique(), *dbo_subject["Author"].unique()} #all[1].unique()
 
 
 relations_list = ["feedback", "dbo:associated", "dbo:bandMember", "dbo:formerBandMember",
@@ -225,13 +227,7 @@ for set in [train, test, val]:
     for rel in set:
         for tripla in set[rel]:
             head = str(tripla[0])
-            if head not in entities: # En el caso que en relaciones no feedback haya artista no registradas en feedback
-                entities[head] = id
-                id+=1
             tail = str(tripla[1])
-            if tail not in entities: # En el caso que en relaciones no feedback haya artista no registradas en feedback
-                entities[tail] = id
-                id+=1
             set2id.append((str(entities[head]), str(entities[tail]), str(relations[rel])))
     sets.append(set2id)
 

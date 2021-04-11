@@ -84,8 +84,8 @@ mappings.columns = ["MovieID", "MovieTitle", "Movie"]
 feedback = feedback.merge(mappings[["MovieID", "Movie"]], on="MovieID")
 
 # Filtracion de solo ratings>=4
-feedback.drop(feedback.loc[feedback.Rating<4].index, inplace=True)
-feedback.drop(["Rating", "Timestamp", "MovieID"], axis=1, inplace=True)
+feedback_relevant = feedback.drop(feedback.loc[feedback.Rating<4].index)
+feedback_relevant.drop(["Rating", "Timestamp", "MovieID"], axis=1, inplace=True)
 
 # Creacion entity2id.txt y relation2id.txt
 directors = dbo_directors["Director"].unique()
@@ -99,8 +99,9 @@ cinematographies = dbo_cinematography["Cinematography"].unique()
 
 # all = pd.read_csv("../data/%s/train_test_entity2rec/all.dat" % dataset, header=None, sep=" ")
 
-users = feedback["UserID"] #all[0].unique()
-movies = feedback["UserID"] #all[1].unique()
+users = feedback["UserID"].unique() #all[0].unique()
+movies = {*feedback["Movie"].unique(), *dbo_directors["Movie"].unique(), *dbo_starring["Movie"].unique(), *dbo_distributor["Movie"].unique(), 
+          *dbo_writer["Movie"].unique(), *dbo_musicComposer["Movie"].unique(), *dbo_producer["Movie"].unique(), *dbo_cinematography["Movie"].unique()}
 
 
 relations_list = ["feedback", "dbo:director", "dbo:starring", "dbo:distributor", "dbo:writer", "dbo:musicComposer",
@@ -127,7 +128,7 @@ with open("../data/%s/entity2id.txt" % dataset, "w") as f:
 
 
 # Creacion train2id.txt, test2id.txt y val2id.txt
-feedback_np = feedback.values
+feedback_np = feedback_relevant.values
 np.random.shuffle(feedback_np)
 train = {}
 train["feedback"] = feedback_np[:int(train_pct*len(feedback_np))]
@@ -149,13 +150,7 @@ for set in [train, test, val]:
     for rel in set:
         for tripla in set[rel]:
             head = str(tripla[0])
-            if head not in entities: # En el caso que en relaciones no feedback haya peliculas no registradas en feedback
-                entities[head] = id
-                id+=1
             tail = str(tripla[1])
-            if tail not in entities: # En el caso que en relaciones no feedback haya peliculas no registradas en feedback
-                entities[tail] = id
-                id+=1
             set2id.append((str(entities[head]), str(entities[tail]), str(relations[rel])))
     sets.append(set2id)
 
