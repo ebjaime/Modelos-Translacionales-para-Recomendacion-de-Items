@@ -79,6 +79,7 @@ class Tester(object):
             type_constrain = 1
         else:
             type_constrain = 0
+            
         training_range = tqdm(self.data_loader)
         
         num_relevant_documents_in_test = self.lib.getTestTotal()
@@ -89,45 +90,65 @@ class Tester(object):
         mean_avg_prec = 0
         
         # Obtener cinco y diez productos mas populares para calcular SER@n
-        ten_most_popular = self.k_most_popular(10)
+        ten_most_popular, item_ids = self.k_most_popular(10)
         five_most_popular = ten_most_popular[:5]
         
         ser_at_5 = 0
         ser_at_10 = 0
         
+        ndcg = 0
+        
         for index, [data_head, data_tail] in enumerate(training_range):
+            
+            # Se seleccionan solo items que son peliculas
+            data_tail["batch_t"] = item_ids
+            
             # score = self.test_one_step(data_head)
             # self.lib.testHead(score.__array_interface__["data"][0], index, type_constrain)
             score = self.test_one_step(data_tail)
             # self.lib.testTail(score.__array_interface__["data"][0], index, type_constrain)
             
             # Menor score es mejor recomendacion
-            score_sorted = np.argsort(score) 
+            score_sorted = item_ids[np.argsort(score)]
                         
-            count = 0 # Contador de items relevantes
+            
+            count_unrated = 0 # Contador de items unrated
+            count_relevant = 0 # Contador de items relevantes
             
             map_aux = 0 # Calculo de MAP intermedio
             
-            for idx,score in enumerate(score_sorted):
-                # Si es relevante (no pertenece al conjunto de entrenamiento ni validación)
-                relevant = self.lib._find_test(int(data_head['batch_h'][0]), int(score), int(data_head['batch_r'][0]))
+            dcg = 0 # discounted cumulative gain
+            
+            for score in score_sorted:
+                # Si es unrated (no pertenece al conjunto de entrenamiento ni validación) segun AllUnratedItems
+                unrated = not self.lib._find_train(int(data_head['batch_h'][0]), int(score), int(data_head['batch_r'][0])) \
+                            and not self.lib._find_val(int(data_head['batch_h'][0]), int(score), int(data_head['batch_r'][0]))
                 
-                if relevant:
+                if unrated:
+                    count_unrated+=1
+                    # Si es relevante pertenece al conjunto de test
+                    relevant = self.lib._find_test(int(data_head['batch_h'][0]), int(score), int(data_head['batch_r'][0]))
+                    if relevant:
+                        count_relevant+=1 
+                        dcg += 1/np.log2(count_unrated + 1)
+                        
+                        if count_unrated <= 5:
+                            h_at_5 += 1
+                            if score not in five_most_popular:
+                                ser_at_5 += 1
+                             
+                        if count_unrated <= 10:
+                            h_at_10 += 1
+                            if score not in ten_most_popular:
+                                ser_at_10 += 1
+    
+                        map_aux += count_relevant/(count_unrated+1) 
+
+            if count_relevant != 0:
+                mean_avg_prec += map_aux / count_relevant
                 
-                    if count < 5:
-                        h_at_5 += relevant
-                        
-                        # TODO Detectar si sumar en ser_at_5 / 10
-                        
-                    if count < 10:
-                        h_at_10 += relevant
-
-                    count+=1           
-                    
-                    map_aux += count/(idx+1) 
-
-            if count!=0:
-                mean_avg_prec += map_aux / count
+            idcg = sum([1/np.log2(pos + 1) for pos in range(count_relevant)])
+            ndcg += dcg/idcg
             
         
         p_at_5 = h_at_5 / (index * 5) 
@@ -141,13 +162,18 @@ class Tester(object):
         ser_at_5 /= (index * 5)
         ser_at_10 /= (index * 10)
         
+        ndcg /= len(training_range)
+        
         print("\n\nP@5: ",p_at_5)
         print("P@10: ",p_at_10)  
         print("R@5: ",r_at_5)
         print("R@10: ",r_at_10)            
         print("MAP: ", mean_avg_prec)
-
-        return p_at_5, p_at_10, r_at_5, r_at_10
+        print("SER@5: ",ser_at_5)
+        print("SER@10: ",ser_at_10) 
+        print("NDCG: ", ndcg)
+        
+        return p_at_5, p_at_10, r_at_5, r_at_10, mean_avg_prec, ser_at_5, ser_at_10, ndcg
         
                
 
@@ -211,13 +237,25 @@ class Tester(object):
 
         return acc, threshlod
     
-    def k_most_popular(self, k, dataset_str="train2id.txt"):
-        path = self.data_loader.get_path() + dataset_str
-        data = pd.read_csv(path, 
+    # K mas populares con relacion = 0 en datos de entrenamiento
+    def k_most_popular(self, k):
+        path_train = self.data_loader.get_path() + "train2id.txt"
+        path_val = self.data_loader.get_path() + "valid2id.txt"
+        data = pd.read_csv(path_train, 
                            sep="\t", 
                            header=None, 
                            names=["user_id","item_id","rel_id"],
                            skiprows=1)
+        data = pd.concat([data, pd.read_csv(path_val, 
+                           sep="\t", 
+                           header=None, 
+                           names=["user_id","item_id","rel_id"],
+                           skiprows=1)])
         
-        return np.argsort(data.groupby(["user_id"]).size()).keys()[:k]
+        data_grouped = data.loc[data.rel_id == 0].groupby(["item_id"])
+        k_sorted_indices = np.argsort(data_grouped.size())[::-1].values[:k]
+        sorted_item_ids = np.sort(data.loc[data.rel_id==0]["item_id"].unique())
+        
+        return sorted_item_ids[k_sorted_indices], sorted_item_ids
+    
     
