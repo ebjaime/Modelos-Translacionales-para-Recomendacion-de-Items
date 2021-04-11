@@ -20,6 +20,10 @@ import pandas as pd
 import numpy as np
 
 dataset = "Movielens1M"
+train_pct = 0.7
+val_pct = 0.1
+test_pct = 0.2
+
 
 # Lectura de atributos
 dbo_directors = pd.read_csv("../data/%s/graphs/dbo:director.edgelist" % dataset,
@@ -93,22 +97,11 @@ producers = dbo_producer["Producer"].unique()
 cinematographies = dbo_cinematography["Cinematography"].unique()
 
 
-all = pd.read_csv("../data/%s/train_test_entity2rec/all.dat" % dataset, header=None, sep=" ")
+# all = pd.read_csv("../data/%s/train_test_entity2rec/all.dat" % dataset, header=None, sep=" ")
 
-users = all[0].unique()
-movies = all[1]
+users = feedback["UserID"] #all[0].unique()
+movies = feedback["UserID"] #all[1].unique()
 
-
-entities_list = {*users, *directors, *actors, *distributors, *writers, *musicComposers, 
-                 *producers, *cinematographies, *movies}
-entities = {}
-with open("../data/%s/entity2id.txt" % dataset, "w") as f:
-    f.write(str(len(entities_list))+"\n")
-    id=0
-    for entity in entities_list:
-        f.write(str(entity)+"\t"+str(id)+"\n")
-        entities[str(entity)] = id
-        id+=1
 
 relations_list = ["feedback", "dbo:director", "dbo:starring", "dbo:distributor", "dbo:writer", "dbo:musicComposer",
                   "dbo:producer", "dbo:cinematography"]
@@ -121,12 +114,19 @@ with open("../data/%s/relation2id.txt" % dataset, "w") as f:
         relations[str(relation)] = id
         id+=1
 
+entities_list = {*users, *directors, *actors, *distributors, *writers, *musicComposers, 
+                 *producers, *cinematographies, *movies}
+entities = {}
+with open("../data/%s/entity2id.txt" % dataset, "w") as f:
+    f.write(str(len(entities_list))+"\n")
+    id=0
+    for entity in entities_list:
+        f.write(str(entity)+"\t"+str(id)+"\n")
+        entities[str(entity)] = id
+        id+=1
+
 
 # Creacion train2id.txt, test2id.txt y val2id.txt
-train_pct = 0.7
-val_pct = 0.1
-test_pct = 0.2
-
 feedback_np = feedback.values
 np.random.shuffle(feedback_np)
 train = {}
@@ -136,6 +136,7 @@ val["feedback"] = feedback_np[int(train_pct*len(feedback_np)) : int(train_pct*le
 test = {}
 test["feedback"] = feedback_np[int(train_pct*len(feedback_np)) + int(val_pct*len(feedback_np)):]
 
+# Solo el conjunto de entrenamiento contendra las triplas no feedback
 for rel,vals in zip(relations_list[1:], [dbo_directors.values, dbo_starring.values, dbo_distributor.values,
                                      dbo_writer.values, dbo_musicComposer.values, dbo_producer.values, dbo_cinematography.values]):
     train[rel] = vals
@@ -148,7 +149,13 @@ for set in [train, test, val]:
     for rel in set:
         for tripla in set[rel]:
             head = str(tripla[0])
+            if head not in entities: # En el caso que en relaciones no feedback haya peliculas no registradas en feedback
+                entities[head] = id
+                id+=1
             tail = str(tripla[1])
+            if tail not in entities: # En el caso que en relaciones no feedback haya peliculas no registradas en feedback
+                entities[tail] = id
+                id+=1
             set2id.append((str(entities[head]), str(entities[tail]), str(relations[rel])))
     sets.append(set2id)
 
