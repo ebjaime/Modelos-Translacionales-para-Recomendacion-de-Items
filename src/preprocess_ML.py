@@ -99,8 +99,8 @@ users = all[0].unique()
 movies = all[1]
 
 
-entities_list = [*users, *directors, *actors, *distributors, *writers, *musicComposers, 
-                 *producers, *cinematographies, *movies]
+entities_list = {*users, *directors, *actors, *distributors, *writers, *musicComposers, 
+                 *producers, *cinematographies, *movies}
 entities = {}
 with open("../data/%s/entity2id.txt" % dataset, "w") as f:
     f.write(str(len(entities_list))+"\n")
