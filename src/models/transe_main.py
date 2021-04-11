@@ -41,7 +41,7 @@ sampling_mode = "link"
 
 # Training parameters
 dataset = "Movielens1M"
-d = 100 # Dimension
+ds = [10,20,30,50] # Dimension
 gamma = 1
 lr = 0.001 # Learning rate
 epochs = 1000 
@@ -68,7 +68,7 @@ train_dataloader = TrainDataLoader(
 	neg_rel = negative_relations)
 
 # Set number of corrupt entities equal to batch size. Each thread will create (batch size / threads)
-train_dataloader.set_ent_neg_rate(train_dataloader.get_batch_size() / threads) 
+train_dataloader.set_ent_neg_rate(int(train_dataloader.get_batch_size() / threads)) 
 
 # Dataloader for test
 test_dataloader = TestDataLoader("../../data/%s/" % dataset, sampling_mode)
@@ -77,52 +77,51 @@ test_dataloader = TestDataLoader("../../data/%s/" % dataset, sampling_mode)
 #  MODEL
 # =============================================================================
 
-transe = TransE(
-	ent_tot = train_dataloader.get_ent_tot(),
-	rel_tot = train_dataloader.get_rel_tot(),
-	dim = d, 
-	p_norm = p_norm, 
-	norm_flag = norm_flag)
-
-
+for d in ds:
+    transe = TransE(
+    	ent_tot = train_dataloader.get_ent_tot(),
+    	rel_tot = train_dataloader.get_rel_tot(),
+    	dim = d, 
+    	p_norm = p_norm, 
+    	norm_flag = norm_flag)
+    
 # =============================================================================
 #  LOSS FUNCTION
 # =============================================================================
 
-# define the loss function
-model = NegativeSampling(
-	model = transe, 
-	loss = MarginLoss(margin = gamma),
-	batch_size = train_dataloader.get_batch_size()
-)
+    # define the loss function
+    model = NegativeSampling(
+    	model = transe, 
+    	loss = MarginLoss(margin = gamma),
+    	batch_size = train_dataloader.get_batch_size()
+    )
 
-
-# =============================================================================
-#  TRAINING
-# =============================================================================
-# If the model does not yet exist
-if os.path.isfile('../checkpoint/transe_%s_d%d_e%d_lr%f.ckpt' % (dataset, d, epochs, lr)) is False:    
+    # =============================================================================
+    #  TRAINING
+    # =============================================================================
+    # If the model does not yet exist
+    if os.path.isfile('../checkpoint/transe_%s_d%d_e%d_lr%f.ckpt' % (dataset, d, epochs, lr)) is False:    
+        
+        trainer = Trainer(model = model, 
+                          data_loader = train_dataloader, 
+                          train_times = epochs, 
+                          alpha = lr, # Learning rate
+                          opt_method="sgd",
+                          use_gpu = True)
+        
+        # Train the model
+        trainer.run()
+        try:
+            transe.save_checkpoint('../checkpoint/transe_%s_d%d_e%d_lr%f.ckpt' % (dataset, d, epochs, lr))
+        except FileNotFoundError:
+            os.system("mkdir ../checkpoint")
+            transe.save_checkpoint('../checkpoint/transe_%s_d%d_e%d_lr%f.ckpt' % (dataset, d, epochs, lr))
+        
     
-    trainer = Trainer(model = model, 
-                      data_loader = train_dataloader, 
-                      train_times = epochs, 
-                      alpha = lr, # Learning rate
-                      opt_method="sgd",
-                      use_gpu = True)
-    
-    # Train the model
-    trainer.run()
-    try:
-        transe.save_checkpoint('../checkpoint/transe_%s_d%d_e%d_lr%f.ckpt' % (dataset, d, epochs, lr))
-    except FileNotFoundError:
-        os.system("mkdir ../checkpoint")
-        transe.save_checkpoint('../checkpoint/transe_%s_d%d_e%d_lr%f.ckpt' % (dataset, d, epochs, lr))
-    
-    
-# =============================================================================
-#  TESTING
-# =============================================================================
-# Test the model
-transe.load_checkpoint('../checkpoint/transe_%s_d%d_e%d_lr%f.ckpt' % (dataset, d, epochs, lr))
-tester = Tester(model = transe, data_loader = test_dataloader, use_gpu = True)
-tester.run_link_prediction(type_constrain = False)
+    # =============================================================================
+    #  TESTING
+    # =============================================================================
+    # Test the model
+    # transe.load_checkpoint('../checkpoint/transe_%s_d%d_e%d_lr%f.ckpt' % (dataset, d, epochs, lr))
+    # tester = Tester(model = transe, data_loader = test_dataloader, use_gpu = True)
+    # tester.run_link_prediction(type_constrain = False)
