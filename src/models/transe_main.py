@@ -30,7 +30,7 @@ from OpenKE.openke.data import TrainDataLoader, TestDataLoader
 
 # Sampling parameters (Train)
 nbatches = 100 # Number of batches when sampling during training
-threads = 8
+threads = 4 #8
 bern = 1 # ??? "method" in original script
 filter = 1 # ???
 negative_relations = 0 # Corrupt relations are not needed
@@ -45,6 +45,8 @@ ds = [10,20,30,50] # Dimension
 gamma = 1
 lr = 0.001 # Learning rate
 epochs = 1000 
+
+use_gpu=False
 
 # Normalization parameters
 p_norm = 1 # order of the norm for score
@@ -107,7 +109,7 @@ for d in ds:
                           train_times = epochs, 
                           alpha = lr, # Learning rate
                           opt_method="sgd",
-                          use_gpu = True)
+                          use_gpu = use_gpu)
         
         # Train the model
         trainer.run()
