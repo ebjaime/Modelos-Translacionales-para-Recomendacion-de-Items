@@ -57,6 +57,9 @@ norm_flag = True # Flag for triple nomralization
 # =============================================================================
 #  DATA LOADERS
 # =============================================================================
+# Calculate number of  corrupt entities
+with open("../../data/" + dataset + "/train2id.txt", "r") as f:
+    num_corrupt_entities = int(f.readline())
 
 # Dataloader for training
 train_dataloader = TrainDataLoader(
@@ -64,13 +67,12 @@ train_dataloader = TrainDataLoader(
 	nbatches = nbatches,
 	threads = threads, 
 	sampling_mode = "normal", 
-	bern_flag = bern, 
+	bern_flag = bern,
 	filter_flag = filter, 
-# 	neg_ent = 25, # Will be declared after calculating batch_size
-	neg_rel = negative_relations)
+	neg_ent = 25,#num_corrupt_entities, # Set number of corrupt entities equal to batch size. Each thread will create (batch size / threads)
+    neg_rel = negative_relations)
 
-# Set number of corrupt entities equal to batch size. Each thread will create (batch size / threads)
-train_dataloader.set_ent_neg_rate(int(train_dataloader.get_batch_size() / threads)) 
+# train_dataloader.set_ent_neg_rate(int(train_dataloader.get_batch_size() / threads))
 
 # Dataloader for test
 test_dataloader = TestDataLoader("../../data/%s/" % dataset, sampling_mode)
