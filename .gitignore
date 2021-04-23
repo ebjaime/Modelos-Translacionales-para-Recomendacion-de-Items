@@ -134,3 +134,7 @@ src/checkpoint/*
 
 # 10/03
 *.odt
+
+#17/04
+.vscode/
+.idea/
