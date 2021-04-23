@@ -69,7 +69,7 @@ train_dataloader = TrainDataLoader(
 	sampling_mode = "normal", 
 	bern_flag = bern,
 	filter_flag = filter, 
-	neg_ent = 25,#num_corrupt_entities, # Set number of corrupt entities equal to batch size. Each thread will create (batch size / threads)
+	neg_ent = 25,#int(num_corrupt_entities/threads), # Set number of corrupt entities equal to batch size. Each thread will create (batch size / threads)
     neg_rel = negative_relations)
 
 # train_dataloader.set_ent_neg_rate(int(train_dataloader.get_batch_size() / threads))
