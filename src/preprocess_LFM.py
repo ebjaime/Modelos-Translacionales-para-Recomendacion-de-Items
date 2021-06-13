@@ -130,7 +130,7 @@ def plot_user_listens(user_id=2):
     plt.show()
 
 # Calculo de Funcion de Distribucion Acumulada Complementaria (CCDF) para cada usuario
-def ccdf_listens(feedback=feedback, user_id=2, plot=False, cutoff=0.7):
+def ccdf_listens(feedback=feedback, user_id=2, plot=False, cutoff=0.6):
     if user_id is None:  # Caso en el que feedback ya viene como DF de un solo usuario
         listens_user = feedback.sort_values(by="Listens")["Listens"].values
     else:
@@ -147,7 +147,7 @@ def ccdf_listens(feedback=feedback, user_id=2, plot=False, cutoff=0.7):
     return listens_user[::-1][cdf > cutoff]
 
 
-# Filtrar usuarios que están dentro del mejor 40% para cada usuario
+# Filtrar artistas que están dentro del mejor 40% para cada usuario
 feedback_relevant_idx = feedback.groupby(["UserID"]).apply(lambda x:
                                                            x.loc[x["Listens"].isin(ccdf_listens(x, user_id=None))])
 

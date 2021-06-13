@@ -100,8 +100,9 @@ cinematographies = dbo_cinematography["Cinematography"].unique()
 # all = pd.read_csv("../data/%s/train_test_entity2rec/all.dat" % dataset, header=None, sep=" ")
 
 users = feedback["UserID"].unique() #all[0].unique()
-movies = {*feedback["Movie"].unique(), *dbo_directors["Movie"].unique(), *dbo_starring["Movie"].unique(), *dbo_distributor["Movie"].unique(), 
-          *dbo_writer["Movie"].unique(), *dbo_musicComposer["Movie"].unique(), *dbo_producer["Movie"].unique(), *dbo_cinematography["Movie"].unique()}
+movies = {*feedback["Movie"].unique(), *dbo_directors["Movie"].unique(), *dbo_starring["Movie"].unique(),
+          *dbo_distributor["Movie"].unique(),*dbo_writer["Movie"].unique(), *dbo_musicComposer["Movie"].unique(),
+          *dbo_producer["Movie"].unique(), *dbo_cinematography["Movie"].unique()}
 
 
 relations_list = ["feedback", "dbo:director", "dbo:starring", "dbo:distributor", "dbo:writer", "dbo:musicComposer",
