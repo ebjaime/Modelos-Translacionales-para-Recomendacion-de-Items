@@ -134,13 +134,15 @@ np.random.shuffle(feedback_np)
 train = {}
 train["feedback"] = feedback_np[:int(train_pct*len(feedback_np))]
 val = {}
-val["feedback"] = feedback_np[int(train_pct*len(feedback_np)) : int(train_pct*len(feedback_np))+int(val_pct*len(feedback_np))]
+val["feedback"] = feedback_np[int(train_pct*len(feedback_np)) : int(train_pct*len(feedback_np))+
+                                                                int(val_pct*len(feedback_np))]
 test = {}
 test["feedback"] = feedback_np[int(train_pct*len(feedback_np)) + int(val_pct*len(feedback_np)):]
 
 # Solo el conjunto de entrenamiento contendra las triplas no feedback
 for rel,vals in zip(relations_list[1:], [dbo_directors.values, dbo_starring.values, dbo_distributor.values,
-                                     dbo_writer.values, dbo_musicComposer.values, dbo_producer.values, dbo_cinematography.values]):
+                                         dbo_writer.values, dbo_musicComposer.values, dbo_producer.values,
+                                         dbo_cinematography.values]):
     train[rel] = vals
 
 # Creacion de cada conjunto de datos
