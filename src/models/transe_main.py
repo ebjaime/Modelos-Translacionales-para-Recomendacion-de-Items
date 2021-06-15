@@ -16,6 +16,7 @@ Created on Fri Jan  29 11:26:45 2021
 """
 
 import os
+import pandas
 
 ## OpenKE ##
 from OpenKE.openke.config import Trainer, Tester
@@ -31,8 +32,8 @@ from OpenKE.openke.data import TrainDataLoader, TestDataLoader
 # Sampling parameters (Train)
 nbatches = 100 # Number of batches when sampling during training
 threads = 4 #8
-bern = 1 # ??? "method" in original script
-filter = 1 # ???
+bern = 1
+filter = 1
 negative_relations = 0 # Corrupt relations are not needed
 
 # Sampling parameters (Test)
@@ -41,7 +42,7 @@ sampling_mode = "link"
 
 # Training parameters
 dataset = "Movielens1M"
-ds = [10,20,30,50] # Dimension
+ds = [10,20,30,50, 100, 200] # Dimension
 gamma = 1
 lr = 0.001 # Learning rate
 epochs = 1000 
@@ -68,11 +69,12 @@ train_dataloader = TrainDataLoader(
 	threads = threads, 
 	sampling_mode = "normal", 
 	bern_flag = bern,
-	filter_flag = filter, 
-	neg_ent = 25,#int(num_corrupt_entities/threads), # Set number of corrupt entities equal to batch size. Each thread will create (batch size / threads)
+	filter_flag = filter,
+    # neg_ent = 25,
+	neg_ent = int(num_corrupt_entities/threads), # Set number of corrupt entities equal to batch size.
+                                                 # Each thread will create (batch size / threads)
     neg_rel = negative_relations)
 
-# train_dataloader.set_ent_neg_rate(int(train_dataloader.get_batch_size() / threads))
 
 # Dataloader for test
 test_dataloader = TestDataLoader("../../data/%s/" % dataset, sampling_mode)
@@ -126,6 +128,18 @@ for d in ds:
     #  TESTING
     # =============================================================================
     # Test the model
-    # transe.load_checkpoint('../checkpoint/transe_%s_d%d_e%d_lr%f.ckpt' % (dataset, d, epochs, lr))
-    # tester = Tester(model = transe, data_loader = test_dataloader, use_gpu = True)
-    # tester.run_link_prediction(type_constrain = False)
+    transe.load_checkpoint('../checkpoint/transe_%s_d%d_e%d_lr%f.ckpt' % (dataset, d, epochs, lr))
+    tester = Tester(model = transe, data_loader = test_dataloader, use_gpu = True)
+    tester.run_link_prediction(type_constrain = False)
+    p_at_5, p_at_10, r_at_5, r_at_10, \
+        mean_avg_prec, ser_at_5, ser_at_10, ndcg = tester.run_link_prediction(type_constrain = False)
+    try:
+        with open("results.txt", "a") as f:
+            f.write("TransE\t"+str(d)+"\t"+str(p_at_5)+"\t"+str(p_at_10)+"\t"+str(r_at_5)+"\t"+str(r_at_10)+"\t"+
+                    str(mean_avg_prec) + "\t" + str(ser_at_5) + "\t" + str(ser_at_10) + "\t" + str(ndcg) + "\t")
+    except FileNotFoundError:
+        with open("results.txt", "w") as f:
+            f.write("Model\tDimension\tp@5\tp@10\tr@5\tr@10\tmap\tser@5\tser@10\tndcg")
+            f.write("TransE\t" + str(d)+"\t"+str(p_at_5)+"\t"+str(p_at_10)+"\t"+str(r_at_5)+"\t"+str(r_at_10)+"\t"+
+                        str(mean_avg_prec)+"\t"+str(ser_at_5)+"\t"+str(ser_at_10)+"\t"+str(ndcg)+"\t")
+
