@@ -186,7 +186,8 @@ bool _find_train(INT h, INT t, INT r) {
     INT mid;
     while (lef + 1 < rig) {
         INT mid = (lef + rig) >> 1;
-        if ((trainList[mid]. h < h) || (trainList[mid]. h == h && trainList[mid]. r < r) || (trainList[mid]. h == h && trainList[mid]. r == r && trainList[mid]. t < t)) lef = mid; else rig = mid;
+        if ((trainList[mid]. h < h) || (trainList[mid]. h == h && trainList[mid]. r < r) || (trainList[mid]. h == h && trainList[mid]. r == r && trainList[mid]. t < t))
+        lef = mid; else rig = mid;
     }
     if (trainList[lef].h == h && trainList[lef].r == r && trainList[lef].t == t) return true;
     if (trainList[rig].h == h && trainList[rig].r == r && trainList[rig].t == t) return true;
@@ -205,7 +206,8 @@ bool _find_test(INT h, INT t, INT r) {
     INT mid;
     while (lef + 1 < rig) {
         INT mid = (lef + rig) >> 1;
-        if ((testList[mid]. h < h) || (testList[mid]. h == h && testList[mid]. r < r) || (testList[mid]. h == h && testList[mid]. r == r && testList[mid]. t < t)) lef = mid; else rig = mid;
+        if ((testList[mid]. h < h) || (testList[mid]. h == h && testList[mid]. r < r) || (testList[mid]. h == h && testList[mid]. r == r && testList[mid]. t < t))
+            lef = mid; else rig = mid;
     }
     if (testList[lef].h == h && testList[lef].r == r && testList[lef].t == t) return true;
     if (testList[rig].h == h && testList[rig].r == r && testList[rig].t == t) return true;
@@ -222,7 +224,8 @@ bool _find_val(INT h, INT t, INT r) {
     INT mid;
     while (lef + 1 < rig) {
         INT mid = (lef + rig) >> 1;
-        if ((validList[mid]. h < h) || (validList[mid]. h == h && validList[mid]. r < r) || (validList[mid]. h == h && validList[mid]. r == r && validList[mid]. t < t)) lef = mid; else rig = mid;
+        if ((validList[mid]. h < h) || (validList[mid]. h == h && validList[mid]. r < r) || (validList[mid]. h == h && validList[mid]. r == r && validList[mid]. t < t))
+         lef = mid; else rig = mid;
     }
     if (validList[lef].h == h && validList[lef].r == r && validList[lef].t == t) return true;
     if (validList[rig].h == h && validList[rig].r == r && validList[rig].t == t) return true;

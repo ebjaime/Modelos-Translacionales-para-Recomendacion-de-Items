@@ -97,9 +97,8 @@ producers = dbo_producer["Producer"].unique()
 cinematographies = dbo_cinematography["Cinematography"].unique()
 
 
-# all = pd.read_csv("../data/%s/train_test_entity2rec/all.dat" % dataset, header=None, sep=" ")
 
-users = feedback["UserID"].unique() #all[0].unique()
+users = feedback["UserID"].unique()
 movies = {*feedback["Movie"].unique(), *dbo_directors["Movie"].unique(), *dbo_starring["Movie"].unique(),
           *dbo_distributor["Movie"].unique(),*dbo_writer["Movie"].unique(), *dbo_musicComposer["Movie"].unique(),
           *dbo_producer["Movie"].unique(), *dbo_cinematography["Movie"].unique()}
@@ -157,7 +156,7 @@ for set in [train, test, val]:
             set2id.append((str(entities[head]), str(entities[tail]), str(relations[rel])))
     sets.append(set2id)
 
-# Insertacion de cada conjunto en su fichero correspondiente
+# Inserción de cada conjunto en su fichero correspondiente
 train2id =  open("../data/%s/train2id.txt" % dataset, "w")
 test2id = open("../data/%s/test2id.txt" % dataset, "w")
 val2id = open("../data/%s/valid2id.txt" % dataset, "w") 
